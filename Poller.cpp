@@ -19,8 +19,8 @@ Poller::Poller(QObject *parent) : QObject(parent)
     m_pollTimer->start();
 
     QSettings settings;
-    if (!settings.contains("token")) {
-        settings.setValue("token", "setme");
+    if (settings.contains("token")) {
+//        settings.setValue("token", "setme");
     } else {
         qDebug() << "Have token" << settings.value("token").toString();
     }
@@ -41,6 +41,7 @@ void Poller::doPoll()
     QSettings settings;
     const QString token = settings.value("token").toString();
     if (token.isEmpty()) {
+        emit newEvent("Missing token", "Can't fetch because of missing token", "missing token");
         qWarning() << "No token";
         return;
     }
@@ -71,15 +72,22 @@ void Poller::onPollReply()
     }
 
     const QJsonObject rootObject = QJsonDocument::fromJson(m_currentRequest->readAll()).object();
-    qDebug() << "Got reply" << rootObject;
+    m_currentRequest->deleteLater();
+
+    if (m_currentRequest->error() != QNetworkReply::NoError) {
+        emit newEvent("Request error", m_currentRequest->errorString(), "network error");
+        return;
+    }
+
     if (!rootObject.contains("incidents")) {
-        qWarning() << "No incident array in object!";
+        qWarning() << "No incident array in object!" << rootObject;
         return;
     }
 
     const QJsonArray incidencts = rootObject["incidents"].toArray();
     if (incidencts.isEmpty()) {
         qDebug() << "No incidents";
+        // TODO: signal when resolved as well
         return;
     }
 

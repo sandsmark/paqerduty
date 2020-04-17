@@ -7,6 +7,7 @@
 #include <QGuiApplication>
 #include <QTimer>
 #include <QSettings>
+#include <QInputDialog>
 
 Notification::Notification(QWidget *parent)
     : QWidget(parent)
@@ -33,6 +34,11 @@ Notification::Notification(QWidget *parent)
     });
 
     setMinimumSize(100, 100);
+
+    QSettings settings;
+    if (!settings.contains("token")) {
+        settings.setValue("token", QInputDialog::getText(nullptr, "Need token", "Please enter an API token"));
+    }
 }
 
 Notification::~Notification()
