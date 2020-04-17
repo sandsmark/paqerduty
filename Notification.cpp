@@ -41,10 +41,6 @@ Notification::Notification(QWidget *parent)
     connect(dismiss, &QPushButton::clicked, this, &Notification::onDismiss);
     connect(quit, &QPushButton::clicked, qGuiApp, &QGuiApplication::quit);
 
-    QTimer::singleShot(100, this, [this]() {
-        onNewEvent("Test", "adsfasdfasd\nasdfasdfasdf<a href=google.com>test</a>", "1234");
-    });
-
     setMinimumSize(100, 100);
 
     m_trayIcon = new QSystemTrayIcon(QIcon(":/icon.png"), this);
