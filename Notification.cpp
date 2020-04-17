@@ -6,6 +6,7 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QTimer>
+#include <QSettings>
 
 Notification::Notification(QWidget *parent)
     : QWidget(parent)
@@ -18,6 +19,7 @@ Notification::Notification(QWidget *parent)
 
     m_title = new QLabel("Title");
     m_body = new QLabel("Body");
+    m_body->setTextFormat(Qt::RichText);
 
     QPushButton *dismiss = new QPushButton("Dismiss");
 
@@ -27,24 +29,31 @@ Notification::Notification(QWidget *parent)
 
     connect(dismiss, &QPushButton::clicked, this, &Notification::onDismiss);
     QTimer::singleShot(100, this, [this]() {
-        onShowEvent("Test", "adsfasdfasd\nasdfasdfasdf<a href=google.com>test</a>", "1234");
+        onNewEvent("Test", "adsfasdfasd\nasdfasdfasdf<a href=google.com>test</a>", "1234");
     });
+
+    setMinimumSize(100, 100);
 }
 
 Notification::~Notification()
 {
 }
 
-void Notification::onShowEvent(const QString &title, const QString &body, const QString &id)
+void Notification::onNewEvent(const QString &title, const QString &body, const QString &id)
 {
+    if (id == m_id && isVisible()) {
+        return;
+    }
+
     m_id = id;
     m_title->setText(title);
     m_body->setText(body);
+    adjustSize();
 
     const QScreen *screen = QGuiApplication::primaryScreen();
+
     QRect geometry = rect();
     geometry.moveTop(0);
-
     geometry.moveLeft(screen->size().width() - geometry.width());
 
     setGeometry(geometry);
