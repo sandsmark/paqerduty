@@ -25,6 +25,10 @@ private slots:
     void onDismiss();
 
 private:
+    void enableAutostart();
+    void disableAutostart();
+    QString autostartPath();
+
     QString m_id;
     QLabel *m_body;
     QLabel *m_title;

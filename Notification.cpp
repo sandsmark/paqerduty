@@ -10,6 +10,10 @@
 #include <QSettings>
 #include <QInputDialog>
 #include <QSystemTrayIcon>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QDir>
+#include <QOperatingSystemVersion>
 
 Notification::Notification(QWidget *parent)
     : QWidget(parent)
@@ -90,5 +94,53 @@ void Notification::onDismiss()
     emit dismissed(m_id);
     m_id.clear();
     hide();
+}
+
+void Notification::enableAutostart()
+{
+    QFileInfo fileInfo(QCoreApplication::applicationFilePath());
+
+#if defined(Q_OS_WIN)
+    const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + QDir::separator() + "Startup" + QDir::separator();
+    QFile::link(fileInfo.canonicalFilePath(), autostartPath());
+#elif defined(Q_OS_LINUX)
+    QSettings desktopFile(autostartPath());
+    desktopFile.beginGroup("Desktop Entry");
+    desktopFile.setValue("Exec", fileInfo.canonicalFilePath());
+#elif defined(Q_OS_MACOS)
+    const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) +"Library/LaunchAgents/";
+    QSettings plist(autostartPath(), QSettings::NativeFormat); // TODO check how it encodes QStringList and bools
+    plist.setValue("Label", QCoreApplication::applicationName());
+    plist.setValue("ProgramArguments", QStringList({fileInfo.canonicalFilePath()}));
+    plist.setValue("ProcessType", "Interactive");
+    plist.setValue("RunAtLoad", true);
+    plist.setValue("KeepAlive", false);
+#else
+    qWarning() << "Unsupported OS";
+#endif
+}
+
+void Notification::disableAutostart()
+{
+    QFile::remove(autostartPath());
+}
+
+QString Notification::autostartPath()
+{
+    QFileInfo fileInfo(QCoreApplication::applicationFilePath());
+
+#if defined(Q_OS_WIN)
+    const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + QDir::separator() + "Startup" + QDir::separator();
+    return targetDir + fileInfo.completeBaseName() + ".lnk";
+#elif defined(Q_OS_LINUX)
+    const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + "/autostart/";
+    QDir().mkpath(targetDir);
+    return targetDir + fileInfo.completeBaseName() + ".desktop";
+#elif defined(Q_OS_MACOS)
+    const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "Library/LaunchAgents/";
+    return targetDir + fileInfo.completeBaseName() + ".plist";
+#else
+#error "Unsupported OS";
+#endif
 }
 
