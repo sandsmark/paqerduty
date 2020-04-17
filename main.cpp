@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
     Poller poller;
 
     QObject::connect(&poller, &Poller::newEvent, &w, &Notification::onNewEvent);
+    QObject::connect(&poller, &Poller::noEvents, &w, &Notification::onNoEvents);
 
     return a.exec();
 }

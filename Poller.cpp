@@ -75,6 +75,7 @@ void Poller::onPollReply()
     m_currentRequest->deleteLater();
 
     if (m_currentRequest->error() != QNetworkReply::NoError) {
+        qWarning() << "Request error" << m_currentRequest->errorString();
         emit newEvent("Request error", m_currentRequest->errorString(), "network error");
         return;
     }
@@ -87,6 +88,9 @@ void Poller::onPollReply()
     const QJsonArray incidencts = rootObject["incidents"].toArray();
     if (incidencts.isEmpty()) {
         qDebug() << "No incidents";
+
+        emit noEvents(); // resets the icon to normal
+
         // TODO: signal when resolved as well
         return;
     }

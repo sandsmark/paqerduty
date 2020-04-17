@@ -18,6 +18,7 @@ find_package(Qt5 COMPONENTS Widgets Network REQUIRED)
     Notification.h
     Poller.cpp
     Poller.h
+    icon.qrc
   )
 
 target_link_libraries(paqerduty PRIVATE Qt5::Widgets Qt5::Network)

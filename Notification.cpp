@@ -3,11 +3,13 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QTimer>
 #include <QSettings>
 #include <QInputDialog>
+#include <QSystemTrayIcon>
 
 Notification::Notification(QWidget *parent)
     : QWidget(parent)
@@ -16,24 +18,38 @@ Notification::Notification(QWidget *parent)
 
     setAttribute(Qt::WA_X11NetWmWindowTypeNotification); // For compton or whatever you call it, avoids active check e. g. for darkening
 
-    setLayout(new QVBoxLayout);
+    QVBoxLayout *layout = new QVBoxLayout;
+    setLayout(layout);
 
     m_title = new QLabel("Title");
     m_body = new QLabel("Body");
     m_body->setTextFormat(Qt::RichText);
 
     QPushButton *dismiss = new QPushButton("Dismiss");
+    QPushButton *quit = new QPushButton("Quit");
 
-    layout()->addWidget(m_title);
-    layout()->addWidget(m_body);
-    layout()->addWidget(dismiss);
+    QHBoxLayout *quitLayout = new QHBoxLayout;
+    quitLayout->addStretch();
+    quitLayout->addWidget(quit);
+    layout->addLayout(quitLayout);
+
+    layout->addWidget(m_title);
+    layout->addWidget(m_body);
+    layout->addWidget(dismiss);
+
 
     connect(dismiss, &QPushButton::clicked, this, &Notification::onDismiss);
+    connect(quit, &QPushButton::clicked, qGuiApp, &QGuiApplication::quit);
+
     QTimer::singleShot(100, this, [this]() {
         onNewEvent("Test", "adsfasdfasd\nasdfasdfasdf<a href=google.com>test</a>", "1234");
     });
 
     setMinimumSize(100, 100);
+
+    m_trayIcon = new QSystemTrayIcon(QIcon(":/icon.png"), this);
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, &Notification::show);
+    m_trayIcon->show();
 
     QSettings settings;
     if (!settings.contains("token")) {
@@ -64,6 +80,13 @@ void Notification::onNewEvent(const QString &title, const QString &body, const Q
 
     setGeometry(geometry);
     show();
+    m_trayIcon->setIcon(QIcon(":/icon-active.png"));
+    m_trayIcon->show();
+}
+
+void Notification::onNoEvents()
+{
+    m_trayIcon->setIcon(QIcon(":/icon.png"));
 }
 
 void Notification::onDismiss()

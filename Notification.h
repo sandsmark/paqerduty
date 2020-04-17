@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QLabel;
+class QSystemTrayIcon;
 
 class Notification : public QWidget
 {
@@ -18,6 +19,7 @@ signals:
 
 public slots:
     void onNewEvent(const QString &title, const QString &body, const QString &id);
+    void onNoEvents();
 
 private slots:
     void onDismiss();
@@ -26,5 +28,6 @@ private:
     QString m_id;
     QLabel *m_body;
     QLabel *m_title;
+    QSystemTrayIcon *m_trayIcon;
 };
 #endif // NOTIFICATION_H

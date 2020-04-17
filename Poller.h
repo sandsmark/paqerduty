@@ -16,6 +16,7 @@ public:
 
 signals:
     void newEvent(const QString &title, const QString &body, const QString &id);
+    void noEvents();
 
 private slots:
     void doPoll();
