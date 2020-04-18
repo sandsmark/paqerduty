@@ -13,7 +13,9 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QDir>
-#include <QOperatingSystemVersion>
+#include <QAction>
+#include <QMenu>
+#include <QDebug>
 
 Notification::Notification(QWidget *parent)
     : QWidget(parent)
@@ -47,8 +49,22 @@ Notification::Notification(QWidget *parent)
 
     setMinimumSize(100, 100);
 
+
+    QMenu *trayMenu = new QMenu(this);
+    m_autostartAction = trayMenu->addAction("Enable autostart", this, &Notification::onToggleAutostart);
+    m_autostartAction->setCheckable(true);
+    m_autostartAction->setChecked(QFile::exists(autostartPath()));
+    trayMenu->addAction("Quit", qApp, &QCoreApplication::quit);
+
     m_trayIcon = new QSystemTrayIcon(QIcon(":/icon.png"), this);
-    connect(m_trayIcon, &QSystemTrayIcon::activated, this, &Notification::show);
+    m_trayIcon->setContextMenu(trayMenu);
+
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](const QSystemTrayIcon::ActivationReason reason) {
+        if (reason != QSystemTrayIcon::Context) {
+            show();
+        }
+    });
+
     m_trayIcon->show();
 
     QSettings settings;
@@ -70,6 +86,18 @@ void Notification::onNewEvent(const QString &title, const QString &body, const Q
     m_id = id;
     m_title->setText(title);
     m_body->setText(body);
+
+    m_trayIcon->setIcon(QIcon(":/icon-active.png"));
+    show();
+}
+
+void Notification::onNoEvents()
+{
+    m_trayIcon->setIcon(QIcon(":/icon.png"));
+}
+
+void Notification::showEvent(QShowEvent *showEvent)
+{
     adjustSize();
 
     const QScreen *screen = QGuiApplication::primaryScreen();
@@ -79,14 +107,8 @@ void Notification::onNewEvent(const QString &title, const QString &body, const Q
     geometry.moveLeft(screen->size().width() - geometry.width());
 
     setGeometry(geometry);
-    show();
-    m_trayIcon->setIcon(QIcon(":/icon-active.png"));
-    m_trayIcon->show();
-}
 
-void Notification::onNoEvents()
-{
-    m_trayIcon->setIcon(QIcon(":/icon.png"));
+    QWidget::showEvent(showEvent);
 }
 
 void Notification::onDismiss()
@@ -94,6 +116,16 @@ void Notification::onDismiss()
     emit dismissed(m_id);
     m_id.clear();
     hide();
+}
+
+void Notification::onToggleAutostart()
+{
+    if (QFile::exists(autostartPath())) {
+        disableAutostart();
+    } else {
+        enableAutostart();
+    }
+    m_autostartAction->setChecked(QFile::exists(autostartPath()));
 }
 
 void Notification::enableAutostart()
@@ -104,7 +136,7 @@ void Notification::enableAutostart()
     const QString targetDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + QDir::separator() + "Startup" + QDir::separator();
     QFile::link(fileInfo.canonicalFilePath(), autostartPath());
 #elif defined(Q_OS_LINUX)
-    QSettings desktopFile(autostartPath());
+    QSettings desktopFile(autostartPath(), QSettings::IniFormat);
     desktopFile.beginGroup("Desktop Entry");
     desktopFile.setValue("Exec", fileInfo.canonicalFilePath());
 #elif defined(Q_OS_MACOS)

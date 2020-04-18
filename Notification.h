@@ -21,10 +21,16 @@ public slots:
     void onNewEvent(const QString &title, const QString &body, const QString &id);
     void onNoEvents();
 
+protected:
+    void showEvent(QShowEvent *showEvent) override;
+
 private slots:
     void onDismiss();
+    void onToggleAutostart();
 
 private:
+    void makeVisible(); // updates geometry etc
+
     void enableAutostart();
     void disableAutostart();
     QString autostartPath();
@@ -33,5 +39,6 @@ private:
     QLabel *m_body;
     QLabel *m_title;
     QSystemTrayIcon *m_trayIcon;
+    QAction *m_autostartAction;
 };
 #endif // NOTIFICATION_H
