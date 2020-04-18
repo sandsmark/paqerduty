@@ -13,11 +13,16 @@ Usage
 Get an access token:
  - https://github.com/sandsmark/paqerduty.git
 
+Dependencies:
+ - Qt
+ - CMake
+ - A compiler
+
 Build and run:
  - `git clone https://github.com/sandsmark/paqerduty.git`
  - `cd paqerduty`
- - `qmake`
- - `make`
+ - `cmake .`
+ - `cmake --build .`
  - `./paqerduty`
  - Enter the access token
  - Right click on the tray icon and choose "Enable autostart" to automatically
